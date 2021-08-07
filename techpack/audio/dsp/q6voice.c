@@ -4352,29 +4352,31 @@ static int voice_get_avcs_version_per_service(uint32_t service_id)
 		       AVCS_SERVICE_ID_ALL);
 		return -EINVAL;
 	}
+	
+#ifdef CONFIG_MACH_XIAOMI_C6
+	common.is_avcs_version_queried = true;
+	return CVP_VERSION_1;
+#endif
+
 	common.is_avcs_version_queried = true;
 	return CVP_VERSION_1;
 #else
 	int ret = 0;
 	size_t ver_size;
 	struct avcs_fwk_ver_info *ver_info = NULL;
-
 	if (service_id == AVCS_SERVICE_ID_ALL) {
 		pr_err("%s: Invalid service id: %d", __func__,
 		       AVCS_SERVICE_ID_ALL);
 		return -EINVAL;
 	}
-
 	ver_size = sizeof(struct avcs_get_fwk_version) +
 		   sizeof(struct avs_svc_api_info);
 	ver_info = kzalloc(ver_size, GFP_KERNEL);
 	if (ver_info == NULL)
 		return -ENOMEM;
-
 	ret = q6core_get_service_version(service_id, ver_info, ver_size);
 	if (ret < 0)
 		goto done;
-
 	ret = ver_info->services[0].api_version;
 	common.is_avcs_version_queried = true;
 done:

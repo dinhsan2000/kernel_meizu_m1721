@@ -45,6 +45,10 @@
 #include "msm-dolby-dap-config.h"
 #include "msm-ds2-dap-config.h"
 
+#ifdef CONFIG_MSM_CIRRUS_PLAYBACK
+#include "msm-cirrus-playback.h"
+#endif
+
 #ifndef CONFIG_DOLBY_DAP
 #undef DOLBY_ADM_COPP_TOPOLOGY_ID
 #define DOLBY_ADM_COPP_TOPOLOGY_ID 0xFFFFFFFE
@@ -4795,7 +4799,7 @@ static const struct snd_kcontrol_new tertiary_mi2s_rx_mixer_controls[] = {
 	msm_routing_put_audio_mixer),
 	SOC_SINGLE_EXT("MultiMedia9", MSM_BACKEND_DAI_TERTIARY_MI2S_RX,
 	MSM_FRONTEND_DAI_MULTIMEDIA9, 1, 0, msm_routing_get_audio_mixer,
-	msm_routing_put_audio_mixer)
+	msm_routing_put_audio_mixer),
 	SOC_DOUBLE_EXT("MultiMedia10", SND_SOC_NOPM,
 	MSM_BACKEND_DAI_TERTIARY_MI2S_RX,
 	MSM_FRONTEND_DAI_MULTIMEDIA10, 1, 0, msm_routing_get_audio_mixer,
@@ -16107,15 +16111,15 @@ static const struct snd_kcontrol_new int4_mi2s_rx_vi_fb_mono_ch_mux =
 	int4_mi2s_rx_vi_fb_mono_ch_mux_enum, spkr_prot_get_vi_lch_port,
 	spkr_prot_put_vi_lch_port);
 
-static const struct snd_kcontrol_new int4_mi2s_rx_vi_fb_stereo_ch_mux =
-	SOC_DAPM_ENUM_EXT("INT4_MI2S_RX_VI_FB_STEREO_CH_MUX",
-	int4_mi2s_rx_vi_fb_stereo_ch_mux_enum, spkr_prot_get_vi_rch_port,
-	spkr_prot_put_vi_rch_port);
-
 static const struct snd_kcontrol_new quat_mi2s_rx_vi_fb_mux =
 	SOC_DAPM_ENUM_EXT("QUAT_MI2S_RX_VI_FB_MUX",
 	quat_mi2s_rx_vi_fb_mux_enum, spkr_prot_get_vi_lch_port,
 	spkr_prot_put_vi_lch_port);
+
+static const struct snd_kcontrol_new int4_mi2s_rx_vi_fb_stereo_ch_mux =
+	SOC_DAPM_ENUM_EXT("INT4_MI2S_RX_VI_FB_STEREO_CH_MUX",
+	int4_mi2s_rx_vi_fb_stereo_ch_mux_enum, spkr_prot_get_vi_rch_port,
+	spkr_prot_put_vi_rch_port);
 	
 static const struct snd_soc_dapm_widget msm_qdsp6_widgets[] = {
 	/* Frontend AIF */
@@ -21056,8 +21060,7 @@ done:
 	return ret;
 }
 
-static const struct snd_kcontrol_new
-	msm_routing_be_dai_name_table_mixer_controls[] = {
+static const struct snd_kcontrol_new msm_routing_be_dai_name_table_mixer_controls[] = {
 	{
 		.access = SNDRV_CTL_ELEM_ACCESS_TLV_READ |
 			  SNDRV_CTL_ELEM_ACCESS_TLV_CALLBACK,
@@ -21067,7 +21070,7 @@ static const struct snd_kcontrol_new
 		.private_value = (unsigned long) &(struct soc_bytes_ext) {
 			.max = sizeof(be_dai_name_table),
 			.get = msm_routing_be_dai_name_table_tlv_get,
-		}
+		},
 	},
 };
 
@@ -21139,8 +21142,7 @@ static const struct snd_pcm_ops msm_routing_pcm_ops = {
 };
 
 /* Not used but frame seems to require it */
-static int msm_routing_probe(struct snd_soc_platform *platform)
-{
+static int msm_routing_probe(struct snd_soc_platform *platform) {
 	snd_soc_dapm_new_controls(&platform->component.dapm, msm_qdsp6_widgets,
 			   ARRAY_SIZE(msm_qdsp6_widgets));
 	snd_soc_dapm_add_routes(&platform->component.dapm, intercon,
@@ -21207,8 +21209,12 @@ static int msm_routing_probe(struct snd_soc_platform *platform)
 			port_multi_channel_map_mixer_controls,
 			ARRAY_SIZE(port_multi_channel_map_mixer_controls));
 
+#ifdef CONFIG_MSM_CIRRUS_PLAYBACK
+	msm_crus_pb_add_controls(platform);
+#endif
+
 	return 0;
-}
+};
 
 int msm_routing_pcm_new(struct snd_soc_pcm_runtime *runtime)
 {
